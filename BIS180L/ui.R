@@ -9,27 +9,24 @@
 
 library(shiny)
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(
-  
-  # Application title
-  titlePanel("Old Faithful Geyser Data"),
-  
-  # Sidebar with a slider input for number of bins 
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput("bins",
-                  "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30)
-    ),
-    
-    # Show a plot of the generated distribution
-    mainPanel(
-      plotOutput("mainPlot")
 
-    )
+
+shinyUI(bootstrapPage(
+  
+  selectInput(inputId = "trait",
+              label = "Traits",
+              choices = c(popID, Particle.number.per.plant, Region, Alu.Tol, Plant.height, Seed.number.per.particle, Seed.color, Pericarp.color, Amylose.content, Protein.content),
+              selected = popID),
+  
+
+  
+  plotOutput(outputId = "mainPlot", height = "300px"),
+  
+  # Display this only if the density is shown
+  conditionalPanel(condition = "input.density == true",
+                   sliderInput(inputId = "bw_adjust",
+                               label = "Bandwidth adjustment:",
+                               min = 0.2, max = 2, value = 1, step = 0.2)
   )
+  
 ))
-
