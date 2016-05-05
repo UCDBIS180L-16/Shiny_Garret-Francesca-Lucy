@@ -3,8 +3,7 @@ library(shiny)
 library(ggplot2)
 library(PSMix)
 library(reshape2)
-setwd("~/Shiny_Garret-Francesca-Lucy/RiceSNPData")
-data.geno <- read.csv("Rice_44K_genotypes.csv.gz",
+data.geno <- read.csv("RiceSNPData/Rice_44K_genotypes.csv.gz",
                       row.names=1,
                       na.strings=c("NA","00"))
 data.geno.2500 <- data.geno[sample(ncol(data.geno), 2500)]
@@ -21,7 +20,6 @@ for (i in 1:nrow(data.geno.2500.c)) {
   data.geno.2500.ps[(i-1)*2+1,] <- substr(data.geno.2500.c[i,],1,1)
   data.geno.2500.ps[(i-1)*2+2,] <- substr(data.geno.2500.c[i,],2,2)
 }
-#Psmix
 load("ps4.2500.RData")
 ps4.df <- as.data.frame(cbind(round(ps4$AmPr,3),ps4$AmId))
 colnames(ps4.df) <- c(paste("pop",1:(ncol(ps4.df)-1),sep=""),"popID")
@@ -34,19 +32,16 @@ colnames(ps4$AmPr) <- paste("pr",1:4,sep="")
 geno.mds <- cbind(geno.mds,ps4$AmPr)
 shinydata <- merge(geno.mds, data.pheno, by="row.names")
 
-#put one time calculations here
-# Define server logic required to draw a histogram
 shinyServer(function(input, output) {
    
-  output$distPlot <- renderPlot({
+  output$mainPlot <- renderPlot({
     
-    # generate bins based on input$bins from ui.R
-    x    <- faithful[, 2] 
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    
-    # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    
+    pl <- ggplot(data = shinydata, 
+                 aes_string(x = "V1",
+                            y = "V2",
+                            fill = input$trait)
+    )
+    p1 + geom_point()
   })
   
 })
