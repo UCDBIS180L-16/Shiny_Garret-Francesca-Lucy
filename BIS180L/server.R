@@ -20,7 +20,7 @@ library(reshape2)
 shinyServer(function(input, output) {
  
      output$mainPlot <- renderPlot({
-       pl <- ggplot(data = shinydata, aes(x=V1, y=V2)) + geom_point()
+       pl <- ggplot(data = shinydata, aes(x=V1, y=V2)) + geom_point(aes_string(color=input$trait))
        pl                        
     
   })
