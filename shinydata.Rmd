@@ -1,0 +1,235 @@
+---
+title: "Assignment 4"
+output: html_document
+---
+
+
+```{r preExercises}
+setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+data.geno <- read.csv("Rice_44K_genotypes.csv.gz",
+                      row.names=1,
+                      na.strings=c("NA","00"))
+
+head(data.geno[,1:20])
+summary(data.geno[,1:20])
+
+data.geno.2500 <- data.geno[sample(ncol(data.geno), 2500)]
+
+dim(data.geno.2500)
+
+geno.numeric <- data.matrix(data.geno.2500)
+head(geno.numeric[,1:20])
+
+genDist <- as.matrix(dist(geno.numeric))
+geno.mds <- as.data.frame(cmdscale(genDist))
+head(geno.mds)
+```
+**EXERCISE 1:** Is there any evidence for populations structure (different sub populations)?  If so, how many sub populations do you think the MDS plot reveals?  What do you make of the individuals that are between the major groups? (Include your plot and code)
+```{r Exercise1}
+library(ggplot2)
+ggplot(geno.mds, aes(V1, V2)) + geom_point()
+```
+Judging from the plot, I think there is evidence for at least 3 different sub-populations. Individuals between the 3 groups are possible hybrids that resulted from interbreeding between the groups. Therefore I would not necessarily categorize them as their own group, given the large amount of variance between them.
+
+**EXERCISE 2:** 
+
+* Use the `read.csv()` `head()` and `summary()` functions that you learned earlier to import and look at this file.  Import the file into an object called "data.pheno".
+* Use merge() to merge the MDS scaled genotype data with the phenotype data.  Here the column that we are merging on is the "row.name" column.  So you can use `by="row.names"` or `by=1` in your call to merge.  Use summary and head to look at the new object and make sure that it is as you expect.
+* Include your code in the .Rmd
+```{r Exercise2}
+setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+data.pheno<- read.csv("RiceDiversity.44K.MSU6.Phenotypes.csv",
+                      row.names=1, 
+                      na.strings=c("NA","00"))
+data.pheno.mds <- merge(geno.mds, data.pheno, by="row.names")
+```
+**EXERCISE 3:** Prepare three different plots to explore if subgroups vary by 1) Amylose content; 2) Pericarp color; 3) Region.  Do any of these seem to be associated with the different population groups? Briefly discuss.
+```{r Exercise3}
+library(ggplot2)
+ggplot(data.pheno.mds, aes(V1, V2))  + geom_point(aes(color=Amylose.content))
+```
+Judging from the plot, the cluster in the upper righthand corner (#2) appears to be higher in amylose content than the other two groups (#1,#3), who do not appear to be consistently differentiated to say that they have a pattern of their own. Their amylose content is more of a mix, that tend to be lower than Group #2.
+
+```{r Exercise3cont}
+ggplot(data.pheno.mds, aes(V1, V2))  + geom_point(aes(color=Pericarp.color))
+```
+From the plot we can see that group #2 tends to have darker pericarps while groups #1 and #3 are lighter. Groups #1 and #3 also have a similar, almost identical ratio of light versus dark pericarps.
+
+```{r Exercise3contcont}
+ggplot(data.pheno.mds, aes(V1, V2))  + geom_point(aes(color=Region)) + scale_color_brewer(type="div")
+```
+From the plot we can see that group #1 is a mixture of almost all the regions, however it is slightly biased towards America. Group #3 is also a fair mix, however there is a slight bias towards East Asia. Group #2 is distinct once again from the others, as it is predominantly South Asian with hints of the Middle East, both regions being entirely absent from the other two groups.
+
+*Hint 1* use `color=` argument to `qplot` or `ggplot` to color the point by the different traits  
+*Hint 2* use `size=I(3)` as an argument to increase the point size (you can play with different values)  
+*Hint 3* when plotting the Region data, the colors will be easier to interpret if you include the following at the end of the line with your qplot command: ` + scale_color_brewer(type="div")` This specifies that a diverging set of colors is used.  (Try plotting with and without this).
+
+```{r preExercise4_PSMIX}
+setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+data.geno.2500.c <- apply(data.geno.2500,2,as.character)
+data.geno.2500.ps <- matrix("",nrow=nrow(data.geno.2500.c)*2,ncol=ncol(data.geno.2500.c))
+for (i in 1:nrow(data.geno.2500.c)) {
+  data.geno.2500.ps[(i-1)*2+1,] <- substr(data.geno.2500.c[i,],1,1)
+  data.geno.2500.ps[(i-1)*2+2,] <- substr(data.geno.2500.c[i,],2,2)
+}
+library(PSMix)
+load("ps4.2500.RData")
+names(ps4)
+head(ps4$AmPr)
+round(head(ps4$AmPr),3)
+head(ps4$AmId)
+table(ps4$AmId)
+
+ps4.df <- as.data.frame(cbind(round(ps4$AmPr,3),ps4$AmId))
+head(ps4.df)
+
+colnames(ps4.df) <- c(paste("pop",1:(ncol(ps4.df)-1),sep=""),"popID")
+head(ps4.df)
+
+maxGenome <- apply(ps4$AmPr,1,max)
+ps4.df <- ps4.df[order(ps4.df$popID,-maxGenome),]
+ps4.df$sampleID <- factor(1:413)
+head(ps4.df)
+
+library(reshape2)
+ps4.df.melt <- melt(ps4.df,id.vars=c("popID","sampleID"))
+head(ps4.df.melt) 
+
+library(ggplot2)
+pl <- ggplot(aes(x=sampleID, y=value, color=variable, fill=variable), data=ps4.df.melt)
+pl <- pl + geom_bar(stat="identity") 
+pl <- pl + ylab("genome proportion") + scale_color_brewer(type="div") + scale_fill_brewer(type="div")
+
+pl
+
+```
+
+**EXERCISE 4:** Re plot the MDS data, but include the population assignment in an informative way.  How do the populations assignments relate to the MDS plot?
+```{r Exercise4}
+geno.mds$popID <- factor(ps4$AmId)
+head(geno.mds$popID)
+colnames(ps4$AmPr) <- paste("pr",1:4,sep="")
+geno.mds <- cbind(geno.mds,ps4$AmPr)
+head(geno.mds)
+
+ggplot(geno.mds, aes(V1, V2))  + geom_point(aes(color=popID), size=I(3))
+
+save(data.pheno,geno.mds,file="data_from_SNP_lab.Rdata")
+```
+When re-plotting the MDS for inclusion of the population assignments, the three groups (should) become more distinctive, as population ID is assigned based on the calculated  distance matrix.
+
+```{r preExercise5}
+#setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+#load("data_from_SNP_lab.RData")
+
+head(geno.mds)
+
+data.pheno.mds <- merge(geno.mds,data.pheno,by="row.names",all=T)
+library(ggplot2)
+qplot(x=Amylose.content,data=data.pheno.mds,geom="histogram")
+
+pl <- ggplot(data=data.pheno.mds,aes(x=Amylose.content))
+pl <- pl + geom_histogram(binwidth=3)
+pl <- pl + facet_wrap(facets= ~ Region, ncol=3)
+pl <- pl + ggtitle("Amylose Content")
+pl
+
+qplot(x=Region,y=Amylose.content,geom="boxplot",data=data.pheno.mds)
+
+```
+
+**Exercise 5:** 
+
+* Plot your chosen trait data
+  * as a **single histogram** for all of the data
+  * as **separate histograms** for each of the 4 population assignments made by PSMix
+  * as a **boxplot** separated by population. 
+* Based on these histograms do you think that your trait varies by population? 
+* **BONUS** Try using the "violin" geom.  What is this showing?
+```{r Exercise5}
+#For single histogram
+sh<- ggplot(data.pheno.mds,aes(x=Alu.Tol))
+sh<- sh + geom_histogram() + ggtitle("Aluminum Tolerance")
+sh
+
+#For separate histograms
+sh + facet_wrap(facets= ~ popID, ncol=3)
+
+#for a boxplot
+qplot(x=popID,y=Alu.Tol,geom="boxplot",data=data.pheno.mds)
+
+#bonus
+qplot(popID, Alu.Tol, data = data.pheno.mds, geom = "violin")
+```
+Based on these plots I do think that aluminum tolerance varies by population. Population 2 appears to be the most tolerant, however the average tolerance per population is roughly equal across all the populations. It is also worth noting that the distribution of population 3 is lower than the others. The violin plot illustrates probability densities for aluminum tolerance per population, and in that plot population 3 also favors lower tolerance. 
+
+  
+Hint: you will need to use a different binwidth (or don't specify it at all and let R choose the default).  Hint: the relevant column names for population are "popID".  
+
+```{r preExercise6}
+mean(data.pheno.mds$Amylose.content,na.rm=T)
+tapply(X=data.pheno.mds$Amylose.content,INDEX=data.pheno.mds$Region,FUN=min,na.rm=T)
+
+aov1 <- aov(Amylose.content ~ Region,data=data.pheno.mds)
+summary(aov1)
+```
+**Exercise 6:** 
+
+* Obtain the mean of your trait for each of the 4 PSMix populations.
+* Perform an ANOVA for your trait to test if it varies significantly by population.  Show your code, the ANOVA output, and provide an interpretation.
+* Discuss: Do your results present a problem for GWAS?
+
+```{r Exercise6}
+tapply(X=data.pheno.mds$Alu.Tol,INDEX=data.pheno.mds$popID,FUN=mean,na.rm=T)
+
+aov2 <- aov(Alu.Tol ~ popID,data=data.pheno.mds)
+summary(aov2)
+
+```
+Anova found statistical significance in variance in aluminum tolerance in respect to population assignment. This is a good for a GWAS study as we are searching for significant factors pertaining to aluminum tolerance. If Anova is finding statistical significance between aluminum tolerance and population assignment, we now have a foundation for further investigation.
+
+```{r GWAS}
+setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+snpinfo <- read.csv("snpInfo.csv",row.names=1)
+head(snpinfo)
+
+## use if data.geno file not there:
+#data.geno <- read.csv("Rice_44K_genotypes.csv", row.names=1, na.strings=c("NA","00"))
+
+head(data.pheno.mds)
+rownames(data.pheno.mds) <- data.pheno.mds$Row.names
+data.geno.pheno <- merge(data.pheno.mds,data.geno,by="row.names")
+#you can ignore the warning 
+
+library(SNPassoc)
+data.geno.pheno3 <-data.geno.pheno[,c(1:47,grep("X3_",colnames(data.geno.pheno)))]
+snpinfo3 <- snpinfo[snpinfo$chr==3,]
+snps3 <- setupSNP(data.geno.pheno3,48:ncol(data.geno.pheno3),sort=T,info=snpinfo3,sep="")
+
+wg3 <- WGassociation(Alu.Tol,data=snps3,model="co",genotypingRate=50)
+plot(wg3,print.label.SNPs=FALSE)
+sum(codominant(wg3) < 1e-5)
+qqpval(codominant(wg3))
+
+#corrected with pop structure
+wg3.corrected <- WGassociation(Alu.Tol ~ pr1 + pr2 + pr3 + pr4,data=snps3,model="co",genotypingRate=50)
+plot(wg3.corrected,print.label.SNPs=FALSE)
+sum(codominant(wg3.corrected) < 1e-5)
+qqpval(codominant(wg3.corrected))
+
+```
+**Exercise 7:** Describe and discuss the differences in the analysis with and without population structure correction.  Which do you think is the better one to follow-up on, and why?
+I think that it would be better to utilize population structure correction, because the issue of inflated p-values makes data anylsis difficult. You might see a lot of statistical significance where there really isn't any. Population structure is one way to combat this, and as such, it would be the preferrable choice.
+```{r Exercise 8}
+setwd("~/Assignment_4_Elliott.Garrett/RiceSNPData")
+eless5 <- snpinfo3[codominant(wg3.corrected) < 1e-5,]
+wg3withevalues <- cbind(snpinfo3[codominant(wg3.corrected) < 1e-5,],codominant(wg3.corrected)[codominant(wg3.corrected) < 1e-5])
+
+head(eless5)
+head(wg3withevalues)
+
+```
+**Exercise 8:** Look for genes close to your SNP at the [rice genome browser](http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/).  Pick a significant SNP from your analysis and enter its chromosome and position in the search box.  The browser wants you to enter a start and stop position, so for example, you should enter "Chr3:30449857..30449857" and then choose "show 20kb" from the pulldown menu on the left hand side.  Report the SNP you chose and the three closest genes.  These are candidate genes for determining the phenotype of your trait of interest in the rice population.  Briefly discuss these genes as possible candidates for the GWAS peak.  (Include a screenshot of the genome browser)
+
+The SNP I have selected is X3 163423, whose coordinates are Chr3:163423..163423. The three closest genes are LOC 0s03g01230, LOC 0s03g01240, and LOC 0s03g01250. Considering how GWAS found this particular SNP to be so statistically significant, chances are at least one of these genes plays a significant role in determining aluminum tolerance. It is also important to note that this particular SNP is found within LOC 0s03g01240, so that is pretty indicative of what gene is related to this SNP. Whether or not this particular gene is what determines the phenotype remains to be seen, but from my data analysis, this would be my best guess. Screenshot is included as a PDF, located in the same Git repository as this file.
+
