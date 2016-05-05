@@ -13,14 +13,13 @@ library(shiny)
 
 shinyUI(bootstrapPage(
   
-  selectInput(inputId = "trait",
-              label = "Traits",
-              choices = c(popID, Particle.number.per.plant, Region, Alu.Tol, Plant.height, Seed.number.per.particle, Seed.color, Pericarp.color, Amylose.content, Protein.content),
-              selected = popID),
+  selectInput("trait","Traits:",
+              choices = colnames(shinydata)),
   
 
   
+  mainPanel(
   plotOutput(outputId = "mainPlot", height = "300px"),
-
+)
   
 ))
