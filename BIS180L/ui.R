@@ -1,6 +1,7 @@
 
 library(shiny)
 
+load("shinydata.Rdata")
 
 
 shinyUI(bootstrapPage(
