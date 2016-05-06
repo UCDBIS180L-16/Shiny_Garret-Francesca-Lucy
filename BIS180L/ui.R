@@ -1,11 +1,3 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 
@@ -14,12 +6,14 @@ library(shiny)
 shinyUI(bootstrapPage(
   
   selectInput("trait","Traits:",
-              choices = colnames(shinydata)),
+              choices = colnames(shinydata),
+              selected = "Region"),
   
 
-  
+  titlePanel("Rice SNP Data"),
+  helpText("This application creates a scatter plot using Euclidean distances for a selection of 2500 single-nucleotide polymorphisms (SNPs) for rice. It also colorizes based on a selected characteristic"),
   mainPanel(
-  plotOutput(outputId = "mainPlot", height = "300px"),
+  plotOutput(outputId = "mainPlot", height = "300px")
 )
   
 ))

@@ -3,7 +3,7 @@ library(shiny)
 library(ggplot2)
 library(PSMix)
 library(reshape2)
-  
+  #make sure to place RiceSNPData within BIS180L and make sure correct directory is set
   load("RiceSNPData/data_from_SNP_lab.Rdata")
     load("RiceSNPData/ps4.2500.RData")
     ps4.df <- as.data.frame(cbind(round(ps4$AmPr,3),ps4$AmId))
