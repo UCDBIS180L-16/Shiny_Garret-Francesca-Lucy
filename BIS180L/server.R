@@ -5,6 +5,7 @@ library(reshape2)
 #make sure to place RiceSNPData within BIS180L and make sure correct directory is set
 #also make sure this chunk of code is run beforehand
 #load("RiceSNPData/data_from_SNP_lab.Rdata")
+#different paths between contributers will crate issues
 #load("RiceSNPData/ps4.2500.RData")
 #ps4.df <- as.data.frame(cbind(round(ps4$AmPr,3),ps4$AmId))
 #colnames(ps4.df) <- c(paste("pop",1:(ncol(ps4.df)-1),sep=""),"popID")
@@ -26,6 +27,7 @@ library(reshape2)
 #shinydata$pr4 <- NULL
 #removing duplicated pr values, not necessary
 #save(shinydata, file="shinydata.Rdata")
+#created new file shinydata.Rdata<- had issues with web app. shiny did not have the same environment.
 load("shinydata.Rdata")
 shinyServer(function(input, output) {
   
