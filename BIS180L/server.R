@@ -32,7 +32,10 @@ load("shinydata.Rdata")
 shinyServer(function(input, output) {
   
   output$mainPlot <- renderPlot({
-    pl <- ggplot(data = shinydata, aes(x=V1, y=V2)) + geom_point(aes_string(color=input$trait), size=I(as.numeric(input$adjust)))
+    pl <- ggplot(data = shinydata, aes(x=V1, y=V2)) + geom_point(aes_string(color=input$trait), size=I(as.numeric(input$adjust))) 
+    pl <- pl + scale_fill_hue(c=45, l=80)
+                                                                 
+    
     pl                        
     
   })
